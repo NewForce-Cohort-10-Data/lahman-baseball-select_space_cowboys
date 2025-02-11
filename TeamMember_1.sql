@@ -64,28 +64,35 @@ ORDER BY successful_steals DESC;
 
 --//Chris Owings had the most success with stealing bases in 2016.
 
-
-(Advanced)
-Q10. Find all players who hit their career-high home runs in 2016 (played at least 10 years, hit at least 1 HR).
-
+--Q10.
 --Find all players who hit their career highest number of home runs in 2016.
 --Consider only players who have played in the league for at least 10 years, 
 --and who hit at least one home run in 2016. 
 --Report the players' first and last names 
 --and the number of home runs they hit in 2016.
 
-SELECT 
-playerid,
-people.namefirst,
-people.namelast,
-yearid,
-hr
-FROM batting
-INNER JOIN people USING(playerid)
-WHERE batting.yearid = 2016 
-AND people.debut <= '2006-01-01'
-ORDER BY hr DESC;
 
+WITH career_high AS (
+SELECT playerid, MAX(hr) AS max_hr
+FROM batting
+WHERE hr >= 1
+Group BY playerid
+),
+player_experience AS (
+SELECT playerid
+FROM batting
+GROUP BY playerid
+HAVING MAX(yearid) - MIN(yearid) >= 10
+)
+SELECT b.playerid, p.namefirst, p.namelast, b.hr
+FROM batting AS b
+INNER JOIN people AS p USING(playerid)
+INNER JOIN career_high AS ch ON b.playerid = ch.playerid AND b.hr = ch.max_hr
+INNER JOIN player_experience AS play on b.playerid = play.playerid
+WHERE b.yearid = 2016
+ORDER BY b.hr DESC;
+
+--//Edwin Encarnacion at the very top, had a career high of 42 home runs in 2016. There were 7 other players listed from this query.
 
 
 
