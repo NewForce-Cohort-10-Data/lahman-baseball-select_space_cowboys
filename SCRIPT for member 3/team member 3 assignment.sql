@@ -41,6 +41,7 @@ FROM teams;
 
 SELECT
 (t.yearid / 10) * 10 AS decade,  
+--  this performs integer division which disgards the remainder so 1973/10 = 197.3 so 197 then multiply by 10 equals 1970. this is the difference between floating pooint and integer math in sql
 ROUND(SUM(SO) * 1.0 / SUM(G), 2) AS avg_strikeouts_per_game,
 ROUND(SUM(HR) * 1.0 / SUM(G), 2) AS avg_homeruns_per_game
 FROM teams t
@@ -54,19 +55,21 @@ ORDER by decade DESC;
 SELECT *
 FROM teams;
 
-SELECT teamid, MAX(W) AS total_wins
+SELECT yearid, teamid, MAX(W) AS total_wins
 FROM teams
 WHERE yearid BETWEEN 1970 AND 2016
 AND WSWin = 'N'
-GROUP BY teamid
-ORDER BY total_wins DESC;
+GROUP BY teamid, yearid
+ORDER BY total_wins DESC
+LIMIT 1;
 
 SELECT yearid,teamid, MIN(W) AS total_wins
 FROM teams
 WHERE yearid BETWEEN 1970 AND 2016
 AND WSWin = 'Y'
 GROUP BY teamid, yearid
-ORDER BY total_wins ASC;
+ORDER BY total_wins ASC
+LIMIT 1;
 
 -- ANSWER
 -- 1981 the season was split in half due to a strike-shortened season
@@ -80,19 +83,43 @@ AND WSWin = 'Y'
 GROUP BY teamid, yearid
 ORDER BY total_wins ASC;
 
+-- Floating point vs integer math makes sure we keep decimal points
+
 --  How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
 
 
-SELECT yearid, teamid, MAX(W) AS max_wins
-FROM teams
+SELECT DISTINCT yearid, teamid, W
+FROM teams t1
 WHERE yearid BETWEEN 1970 AND 2016
-GROUP BY yearid, teamid;
+AND W = (SELECT MAX(W) FROM teams t2 WHERE t1.yearid =t2.yearid)
+GROUP BY yearid, teamid, W
+ORDER BY yearid DESC;
 
  SELECT yearid, teamid
  FROM teams
  WHERE yearid BETWEEN 1970 AND 2016
  AND WSWin = 'Y';
  
+WITH Mostwins_peryear AS (SELECT DISTINCT yearid, teamid, W
+FROM teams t1
+WHERE yearid BETWEEN 1970 AND 2016
+AND W = (SELECT MAX(W) FROM teams t2 WHERE t1.yearid =t2.yearid)
+GROUP BY yearid, teamid, W),
+wswins_peryear AS ( SELECT yearid, teamid
+FROM teams
+WHERE yearid BETWEEN 1970 AND 2016
+AND WSWin = 'Y')
+SELECT 
+COUNT(mwpy.yearid) AS times_most_wins_won_ws,
+COUNT(mwpy.yearid) * 100.0 / (2016 - 1970 + 1) AS percentage
+FROM Mostwins_peryear mwpy
+INNER JOIN wswins_peryear wwpy
+ON mwpy.yearid = wwpy.yearid AND mwpy.teamid = wwpy.teamid;
+
+--  Always add +1 when counting a range of years otherwise youd under count by 1 Example 2000-2002 is three years but 2002-2000 is 2
+
+
+
 
 
 
