@@ -3,6 +3,14 @@
 --cyrus teammember-3 (4,5,7)
 --emily teammember-4 (9,12,13)
 
+
+
+
+select*
+from batting;
+select*
+from awardsplayers;
+
 --1 1871 - 2016
 select min(year) as earliest_year, max(year) as latest_year
 from homegames;
@@ -13,8 +21,8 @@ select*
 from people;
 select*
 from schools;
-select*
-from salaries
+select salary
+from salaries;
 select*
 from collegeplaying;
 select*
@@ -29,7 +37,7 @@ from teams;
 --by totalsalary
 
 --David Price at $245,553,888.00
-select namefirst, namelast,playerid, lgid, sum(salary)::INTEGER::MONEY as total_salary
+select namefirst, namelast, sum(salary)::INTEGER::MONEY as total_salary
 from collegeplaying
 join people
 using(playerid)
@@ -37,10 +45,13 @@ join schools
 using(schoolid)
 join salaries
 using (playerid)
-where (lgid = 'NL' or lgid = 'AL')
-and (schoolname = 'Vanderbilt University')
-group by namefirst, namelast, playerid, lgid
+--curious about these parentheses for NL or AL///when i remove them the player changes
+where (schoolname = 'Vanderbilt University')
+group by namefirst, namelast
+--grouping by lgid creates duplicates in the results (removed lgid to debloat)
 order by total_salary desc;
+
+
 
 --8. Using the attendance figures from the homegames table,
 --find the teams and parks which had the top 5 average attendance
